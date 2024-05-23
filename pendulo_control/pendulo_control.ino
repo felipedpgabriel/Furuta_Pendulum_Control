@@ -20,10 +20,9 @@
  * # 1 encoder (2).
  */
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// LEARN : debounce -> filtrar ruídos.
 //////////////////////////////////////////// BIBLIOTECAS ///////////////////////////////////////////
 
-#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 //////////////////////////////////////////// CONSTANTES ////////////////////////////////////////////
@@ -34,10 +33,10 @@ const double K_THETA_PONTO = -2.3353;
 const double K_ALPHA = 80.6651;
 const double K_ALPHA_PONTO = 12.71;
 const double K[4] = {K_THETA, K_THETA_PONTO, K_ALPHA, K_ALPHA_PONTO};
+const double TS = 1/100; // segundos
 
 //// Incremento dos encoders ////
-// 600 P/R -> Pulso equivale a um período de onda A.
-const double INCREMENTO_PEND = double(360)/600;
+const double INCREMENTO_PEND = double(360)/1200;
 // TODO : Descobrir P/R
 const double INCREMENTO_MOT = 0;
 
@@ -56,8 +55,8 @@ const int LED_2 = 0;
 const int LED_3 = 0;
 
 const int EN_MOT = 0; // PWM
-const int IN_1_MOT = 0; // Snetido horário
-const int IN_2_MOT = 0; // Sentido anti-horário
+const int IN_1_MOT = 0; // Snetido horário 
+const int IN_2_MOT = 0; // Sentido anti-horário 
 
 const int SETP_T = 0;
 const int SETP_TP = 0;
@@ -69,6 +68,11 @@ const int SETPOINT[4] = {SETP_T, SETP_TP, SETP_A, SETP_AP};
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); // TODO : Confirmar se o endereco eh 0x27. 
 double erro[4];
+
+volatile int leitura_a_pend, leitura_b_pend, leitura_a_mot, leitura_b_mot;
+double theta, theta_ponto, alpha, alpha_ponto;
+
+double tempo_inicial, tempo_amostra;
 
 //////////////////////////////////////// FUNCOES AUXILIARES ////////////////////////////////////////
 
@@ -85,7 +89,54 @@ void escrever_lcd(String texto, int linha, int coluna)
 	lcd.print(texto);
 }
 
-void atualiza_encoder_A(){};
+void atualiza_enc_b_pend()
+{
+	if(leitura_a_pend == LOW)
+	{
+		alpha -= INCREMENTO_PEND;
+	}
+	else
+	{
+		alpha += INCREMENTO_PEND;
+	}
+}
+
+void atualiza_enc_b_mot()
+{
+	if(leitura_a_mot == LOW)
+	{
+		theta -= INCREMENTO_MOT;
+	}
+	else
+	{
+		theta += INCREMENTO_MOT;
+	}
+}
+
+void atualiza_enc_a_pend()
+{
+	if(leitura_b_pend == LOW)
+	{
+		alpha += INCREMENTO_PEND;
+	}
+	else
+	{
+		alpha -= INCREMENTO_PEND;
+	}
+}
+
+void atualiza_enc_a_mot()
+{
+	if(leitura_b_mot == LOW)
+	{
+		theta += INCREMENTO_MOT;
+	}
+	else
+	{
+		theta -= INCREMENTO_MOT;
+	}
+}
+
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
@@ -109,11 +160,17 @@ void setup()
 	// Inicializando porta Serial para debug
 	Serial.begin(9600);
 
-	// Configurar pinos
-	pinMode(ENC_A_PEND, INPUT);
-	pinMode(ENC_B_PEND, INPUT);
-	pinMode(ENC_A_MOT, INPUT);
-	pinMode(ENC_B_MOT, INPUT);
+	// Configurar pinos //
+	// Encoders
+	pinMode(ENC_A_PEND, INPUT_PULLUP);
+	pinMode(ENC_B_PEND, INPUT_PULLUP);
+	pinMode(ENC_A_MOT, INPUT_PULLUP);
+	pinMode(ENC_B_MOT, INPUT_PULLUP);
+
+	attachInterrupt(ENC_A_PEND, atualiza_enc_a_pend, RISING);
+	attachInterrupt(ENC_B_PEND, atualiza_enc_b_pend, RISING);
+	attachInterrupt(ENC_A_MOT, atualiza_enc_a_mot, RISING);
+	attachInterrupt(ENC_B_MOT, atualiza_enc_b_mot, RISING);
 
 	pinMode(SW_PIN, INPUT);
 	pinMode(BOT_EMERG_PIN, INPUT_PULLUP);
@@ -122,6 +179,7 @@ void setup()
 	pinMode(LED_2, OUTPUT);
 	pinMode(LED_3, OUTPUT);
 
+	// Motor
 	pinMode(EN_MOT, OUTPUT);
 	pinMode(IN_1_MOT, OUTPUT);
 	pinMode(IN_2_MOT, OUTPUT);
@@ -132,11 +190,19 @@ void setup()
 	lcd.init();
 	lcd.backlight();
 	lcd.clear();
+
+	tempo_inicial = millis()
 }
 
 ////////////////////////////////////////////// LOOP ////////////////////////////////////////////////
 
 void loop()
 {
-	// put your main code here, to run repeatedly:
+	delay(TS*1000)
+	tempo_amostra = millis()
+	Serial.print("Tempo: ")
+	Serial.println(tempo_amostra - tempo_inicial)
+	Serial.print("Angulo pêndulo: ")
+	Serial.println(alpha)
+	tempo_inicial = tempo_amostra
 }
