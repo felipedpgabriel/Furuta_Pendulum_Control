@@ -1,32 +1,18 @@
-const double TS = 1/100; // segundos
-const double INCREMENTO_PEND = double(360)/1200;
+const double TS = 0.04; // segundos
+const double INCREMENTO_PEND = double(360)/1200; // TODO : revisar para melhorar precisao
 
-const int ENC_A_PEND = 0;
-const int ENC_B_PEND = 0;
+const int ENC_A_PEND = 23; //2
+const int ENC_B_PEND = 22; //3
 
-volatile int leitura_a_pend, leitura_b_pend;
-
-double alpha;
+volatile double alpha;
 
 double tempo_inicial, tempo_amostra;
 
-double ajusta_angulo(double angulo)
-{
-    if(angulo < -179)
-    {
-        angulo += 360;
-    }
-    else if(angulo > 180)
-    {
-        angulo -= 360;
-    }
-
-    return angulo;
-}
+double tempo;
 
 void atualiza_enc_b_pend()
 {
-	if(leitura_a_pend == LOW)
+	if(digitalRead(ENC_A_PEND) == LOW)
 	{
 		alpha -= INCREMENTO_PEND;
 	}
@@ -35,12 +21,19 @@ void atualiza_enc_b_pend()
 		alpha += INCREMENTO_PEND;
 	}
 
-    alpha = ajusta_angulo(alpha);
+    if(alpha < -179)
+    {
+        alpha += 360;
+    }
+    else if(alpha > 180)
+    {
+        alpha -= 360;
+    }
 }
 
 void atualiza_enc_a_pend()
 {
-	if(leitura_b_pend == LOW)
+	if(digitalRead(ENC_B_PEND) == LOW)
 	{
 		alpha += INCREMENTO_PEND;
 	}
@@ -49,27 +42,36 @@ void atualiza_enc_a_pend()
 		alpha -= INCREMENTO_PEND;
 	}
 
-    alpha = ajusta_angulo(alpha);
+    if(alpha < -179)
+    {
+        alpha += 360;
+    }
+    else if(alpha > 180)
+    {
+        alpha -= 360;
+    }
 }
 
 void setup()
 {
+	Serial.begin (9600);
     pinMode(ENC_A_PEND, INPUT_PULLUP);
 	pinMode(ENC_B_PEND, INPUT_PULLUP);
 
-    attachInterrupt(ENC_A_PEND, atualiza_enc_a_pend, RISING);
-	attachInterrupt(ENC_B_PEND, atualiza_enc_b_pend, RISING);
+    attachInterrupt(digitalPinToInterrupt(ENC_A_PEND), atualiza_enc_a_pend, RISING); //0
+	attachInterrupt(digitalPinToInterrupt(ENC_B_PEND), atualiza_enc_b_pend, RISING); //1
 
-    tempo_inicial = millis()
+    tempo_inicial = millis();
 }
 
 void loop()
 {
-	delay(TS*1000)
-	tempo_amostra = millis()
-	Serial.print("Tempo: ")
-	Serial.println(tempo_amostra - tempo_inicial)
-	Serial.print("Angulo pêndulo: ")
-	Serial.println(alpha)
-	tempo_inicial = tempo_amostra
+	delay(TS*1000);
+	tempo_amostra = millis();
+	tempo = (tempo_amostra - tempo_inicial)/1000;
+	Serial.print("Angulo pêndulo: ");
+	Serial.print(alpha);
+  	Serial.print(" | Tempo: ");
+	Serial.println(tempo);
+	tempo_inicial = tempo_amostra;
 }
