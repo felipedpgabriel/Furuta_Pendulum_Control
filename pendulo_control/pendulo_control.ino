@@ -33,7 +33,7 @@ const double K_THETA_PONTO = -2.3353;
 const double K_ALPHA = 80.6651;
 const double K_ALPHA_PONTO = 12.71;
 const double K[4] = {K_THETA, K_THETA_PONTO, K_ALPHA, K_ALPHA_PONTO};
-const double TS = 1/100; // segundos
+const double TS = 0.04; // segundos
 
 //// Incremento dos encoders ////
 const double INCREMENTO_PEND = double(360)/1200;
@@ -42,10 +42,10 @@ const double INCREMENTO_MOT = 0;
 
 //// Pinos ////
 // TODO : definir pino dos componentes
-const int ENC_A_PEND = 0;
-const int ENC_B_PEND = 0;
-const int ENC_A_MOT = 0;
-const int ENC_B_MOT = 0;
+const int ENC_A_PEND = 2; // 23
+const int ENC_B_PEND = 3; // 22
+const int ENC_A_MOT = 4;
+const int ENC_B_MOT = 5;
 
 const int SW_PIN = 0;
 const int BOT_EMERG_PIN = 0;
@@ -54,25 +54,28 @@ const int LED_1 = 0;
 const int LED_2 = 0;
 const int LED_3 = 0;
 
-const int EN_MOT = 0; // PWM
 const int IN_1_MOT = 0; // Snetido horário 
 const int IN_2_MOT = 0; // Sentido anti-horário 
+const int PWM_PONTE_H = 0; // 
 
-const int SETP_T = 0;
-const int SETP_TP = 0;
-const int SETP_A = 0;
-const int SETP_AP = 0;
-const int SETPOINT[4] = {SETP_T, SETP_TP, SETP_A, SETP_AP};
+const double SETP_T = 0;
+const double SETP_TP = 0;
+const double SETP_A = 0;
+const double SETP_AP = 0;
+const double SETPOINT[4] = {SETP_T, SETP_TP, SETP_A, SETP_AP};
 
 ///////////////////////////////////////// VARIAVEIS GLOBAIS ////////////////////////////////////////
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); // TODO : Confirmar se o endereco eh 0x27. 
 double erro[4];
 
-volatile int leitura_a_pend, leitura_b_pend, leitura_a_mot, leitura_b_mot;
+volatile double ang_enc_pend, ang_enc_mot;
+
 double theta, theta_ponto, alpha, alpha_ponto;
 
-double tempo_inicial, tempo_amostra;
+unsigned long tempo_inicial, tempo_amostra;
+
+double tempo;
 
 //////////////////////////////////////// FUNCOES AUXILIARES ////////////////////////////////////////
 
@@ -89,64 +92,116 @@ void escrever_lcd(String texto, int linha, int coluna)
 	lcd.print(texto);
 }
 
-void atualiza_enc_b_pend()
+volatile double saturacao_encoder(volatile double angulo)
 {
+	if(angulo < -179)
+    {
+        angulo += 360;
+    }
+    else if(angulo > 180)
+    {
+        angulo -= 360;
+    }
+
+	return angulo;
+}
+
+void atualiza_enc_b_pend()
+{	
+	int leitura_a_pend = digitalRead(ENC_A_PEND);
 	if(leitura_a_pend == LOW)
 	{
-		alpha -= INCREMENTO_PEND;
+		ang_enc_pend -= INCREMENTO_PEND;
 	}
 	else
 	{
-		alpha += INCREMENTO_PEND;
+		ang_enc_pend += INCREMENTO_PEND;
 	}
+
+	ang_enc_pend = saturacao_encoder(ang_enc_pend);
+
 }
 
 void atualiza_enc_b_mot()
 {
+	int leitura_a_mot = digitalRead(ENC_A_MOT);
 	if(leitura_a_mot == LOW)
 	{
-		theta -= INCREMENTO_MOT;
+		ang_enc_mot -= INCREMENTO_MOT;
 	}
 	else
 	{
-		theta += INCREMENTO_MOT;
+		ang_enc_mot += INCREMENTO_MOT;
 	}
+
+	ang_enc_mot = saturacao_encoder(ang_enc_mot);
 }
 
 void atualiza_enc_a_pend()
 {
+	int leitura_b_pend = digitalRead(ENC_B_PEND);
 	if(leitura_b_pend == LOW)
 	{
-		alpha += INCREMENTO_PEND;
+		ang_enc_pend += INCREMENTO_PEND;
 	}
 	else
 	{
-		alpha -= INCREMENTO_PEND;
+		ang_enc_pend -= INCREMENTO_PEND;
 	}
+
+	ang_enc_pend = saturacao_encoder(ang_enc_pend);
 }
 
 void atualiza_enc_a_mot()
 {
+	int leitura_b_mot = digitalRead(ENC_B_MOT);
 	if(leitura_b_mot == LOW)
 	{
-		theta += INCREMENTO_MOT;
+		ang_enc_mot += INCREMENTO_MOT;
 	}
 	else
 	{
-		theta -= INCREMENTO_MOT;
+		ang_enc_mot -= INCREMENTO_MOT;
 	}
-}
 
+	ang_enc_mot = saturacao_encoder(ang_enc_mot);
+}
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
-void movimenta_motor(){};
+void movimenta_motor(double sinal_de_controle)
+{
+	// Saturação
+	if(sinal_de_controle > 12)
+	{
+		sinal_de_controle = 12;
+	}
+
+	else if (sinal_de_controle < -12)
+	{
+		sinal_de_controle = -12;
+	}
+
+	double pwm = map(fabs(sinal_de_controle), 0, 12, 0, 255);
+	analogWrite(PWM_PONTE_H, pwm)
+
+	if(sinal_de_controle > 0)
+	{
+		digitalWrite(IN_1_MOT, HIGH);
+  		digitalWrite(IN_2_MOT, LOW);
+	}
+	else if(sinal_de_controle < 0)
+	{
+		digitalWrite(IN_1_MOT, LOW);
+  		digitalWrite(IN_2_MOT, HIGH);
+	}
+}
 
 bool bancada_ok(){};
 
-double calcula_derivada(){};
+double calcula_derivada(double dentaVal, double deltaT){};
 
-double sinal_de_controle(){};
+double sinal_de_controle(double[4] erro){};
 
 void interrupcao_emergencia(){};
 
@@ -156,7 +211,6 @@ void atualiza_lcd(){};
 
 void setup()
 {
-
 	// Inicializando porta Serial para debug
 	Serial.begin(9600);
 
@@ -167,10 +221,10 @@ void setup()
 	pinMode(ENC_A_MOT, INPUT_PULLUP);
 	pinMode(ENC_B_MOT, INPUT_PULLUP);
 
-	attachInterrupt(ENC_A_PEND, atualiza_enc_a_pend, RISING);
-	attachInterrupt(ENC_B_PEND, atualiza_enc_b_pend, RISING);
-	attachInterrupt(ENC_A_MOT, atualiza_enc_a_mot, RISING);
-	attachInterrupt(ENC_B_MOT, atualiza_enc_b_mot, RISING);
+	attachInterrupt(digitalPinToInterrupt(ENC_A_PEND), atualiza_enc_a_pend, RISING);
+	attachInterrupt(digitalPinToInterrupt(ENC_B_PEND), atualiza_enc_b_pend, RISING);
+	attachInterrupt(digitalPinToInterrupt(ENC_A_MOT), atualiza_enc_a_mot, RISING);
+	attachInterrupt(digitalPinToInterrupt(ENC_B_MOT), atualiza_enc_b_mot, RISING);
 
 	pinMode(SW_PIN, INPUT);
 	pinMode(BOT_EMERG_PIN, INPUT_PULLUP);
@@ -180,7 +234,6 @@ void setup()
 	pinMode(LED_3, OUTPUT);
 
 	// Motor
-	pinMode(EN_MOT, OUTPUT);
 	pinMode(IN_1_MOT, OUTPUT);
 	pinMode(IN_2_MOT, OUTPUT);
 	digitalWrite(IN_1_MOT, LOW); 
@@ -191,18 +244,32 @@ void setup()
 	lcd.backlight();
 	lcd.clear();
 
-	tempo_inicial = millis()
+	tempo_inicial = millis();
+	ang_enc_pend = 0;
+	ang_enc_mot = 0;
 }
 
 ////////////////////////////////////////////// LOOP ////////////////////////////////////////////////
 
 void loop()
 {
-	delay(TS*1000)
-	tempo_amostra = millis()
-	Serial.print("Tempo: ")
-	Serial.println(tempo_amostra - tempo_inicial)
-	Serial.print("Angulo pêndulo: ")
-	Serial.println(alpha)
-	tempo_inicial = tempo_amostra
+	delay(TS*1000);
+	tempo_amostra = millis();
+	tempo = (tempo_amostra - tempo_inicial)/1000;
+
+	alpha = ang_enc_pend;
+	theta = ang_enc_mot;
+
+	// calcula derivadas
+
+	// calcula sinal de controle
+
+	// aciona motor
+
+	Serial.print("Tempo: ");
+	Serial.println(tempo);
+	Serial.print("Angulo pêndulo: ");
+	Serial.println(alpha);
+
+	tempo_inicial = tempo_amostra;
 }
