@@ -1,3 +1,14 @@
+/**
+ * @file leitura_encoder.ino
+ * @author Luara Linhares, Marcos 
+ * @brief Teste inicial para contagem de pulsos do encoder do pêndulo.
+ * @version 0.1
+ * @date 2024-05-25
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
 volatile double temp, counter = 0; //This variable will increase or decrease depending on the rotation of encoder
 const double INCREMENTO_PEND = double(360)/1200;
     
