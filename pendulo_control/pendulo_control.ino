@@ -300,7 +300,7 @@ double sinal_de_controle(float erro[4])
 	double u = (K[0] * erro[0] * graus_p_rad + 
 				K[1] * erro[1] * graus_p_rad +
 				K[2] * erro[2] * graus_p_rad + 
-				K[3] * erro[3] * graus_p_rad )
+				K[3] * erro[3] * graus_p_rad );
 
 	return u;
 }
