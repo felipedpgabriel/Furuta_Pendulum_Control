@@ -24,16 +24,18 @@ const int ENC_B_PEND = 22; // Canal B do encoder | Arduino nano usa 3
 ///////////////////////////////////////// VARIAVEIS GLOBAIS ////////////////////////////////////////
 
 // Leitura do encoder //
-volatile float ang_enc_pend;
+volatile float ang_enc_pend = 0;
 
 // Variáveis para amostragem //
-double alpha, alpha_ponto, tempo_amostra;
+float alpha, alpha_ponto;
+unsigned long tempo_amostra;
 
 // Intervalo de tempo na amostragem//
 double delta_tempo; // milissegundos
 
 // Variáveis para valores anteriores //
-double tempo_inicial, alpha_inicial;
+float alpha_inicial;
+unsigned long tempo_inicial;
 
 //////////////////////////////////////// FUNCOES AUXILIARES ////////////////////////////////////////
 
@@ -43,8 +45,9 @@ double tempo_inicial, alpha_inicial;
  */
 void atualiza_enc_b_pend()
 {
-	// Atualização de ângulo //
-	if(digitalRead(ENC_A_PEND) == LOW)
+	// Condicionamento dos limites //
+	int leitura_a_pend = digitalRead(ENC_A_PEND);
+	if(leitura_a_pend == LOW)
 	{
 		ang_enc_pend -= INCREMENTO_PEND;
 	}
@@ -71,7 +74,8 @@ void atualiza_enc_b_pend()
 void atualiza_enc_a_pend()
 {
 	// Atualização de ângulo //
-	if(digitalRead(ENC_B_PEND) == LOW)
+	int leitura_b_pend = digitalRead(ENC_B_PEND);
+	if(leitura_b_pend == LOW)
 	{
 		ang_enc_pend += INCREMENTO_PEND;
 	}
