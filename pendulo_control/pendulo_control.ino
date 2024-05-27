@@ -51,7 +51,7 @@ const float INCREMENTO_MOT = 0;
 //// Pinos ////
 const int ENC_A_PEND = 23; // 2
 const int ENC_B_PEND = 22; // 3
-// TODO : definir pinos do encoder do motor
+// TODO : definir pinos do encoder do motor 19 e 21
 const int ENC_A_MOT = 0; // 4
 const int ENC_B_MOT = 0; // 5
 
