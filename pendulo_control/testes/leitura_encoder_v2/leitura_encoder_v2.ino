@@ -14,7 +14,7 @@
 //////////////////////////////////////////// CONSTANTES ////////////////////////////////////////////
 
 // Constantes gerais //
-const double TS = 0.04; // Período de amostragem [s] | Arduino nano usa 0.08
+const double TS = 0.1; // Período de amostragem [s] | Arduino nano usa 0.08
 const double INCREMENTO_PEND = double(360)/315; // Incremento angular por pulso do encoder
 
 // Pinagens //
@@ -34,7 +34,7 @@ unsigned long tempo_amostra;
 double delta_tempo; // milissegundos
 
 // Variáveis para valores anteriores //
-double alpha_inicial, alpha_aux_vel_inicial;
+double alpha_aux_vel_inicial;
 unsigned long tempo_inicial;
 
 //////////////////////////////////////// FUNCOES AUXILIARES ////////////////////////////////////////
@@ -77,6 +77,7 @@ void atualiza_enc_a_pend()
 
 double condicionamento_angulo(double angulo)
 {
+	// TODO : verificar se é maior que 360
 	if(angulo < -179.9)
     {
         angulo += 360;
@@ -120,7 +121,6 @@ void setup()
 
 	// Inicialização de variáveis "anteriores" //
     tempo_inicial = millis(); // milissegundos
-	alpha_inicial = 0; // graus
 	alpha_aux_vel_inicial = 0;
 }
 
@@ -138,16 +138,15 @@ void loop()
 	if(delta_tempo >= TS*1000)
 	{
 		delta_tempo = delta_tempo/double(1000); // segundos
-		alpha = ang_enc_pend; // °
-		alpha_ponto = (alpha - alpha_aux_vel_inicial)/delta_tempo; // °/s
-		alpha_aux_vel_inicial = alpha;
-		alpha = condicionamento_angulo(alpha);
+		alpha = ang_enc_pend; // ° -179 | -181 | -182
+		alpha_ponto = (alpha - alpha_aux_vel_inicial)/delta_tempo; // °/s -50
+		alpha_aux_vel_inicial = alpha; // -181
+		alpha = condicionamento_angulo(alpha); // -179 | 179
 
 		// Monitoramento dos valores
 		monitoramento_valores();
 
 		// Atualização das variáveis 
 		tempo_inicial = tempo_amostra;
-		alpha_inicial = alpha;
 	}
 }

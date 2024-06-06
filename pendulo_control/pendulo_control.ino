@@ -30,12 +30,12 @@
 //////////////////////////////////////////// CONSTANTES ////////////////////////////////////////////
 
 //// Constantes do controlador ////
-const float K_THETA = -0.1652;
-const float K_THETA_PONTO = -0.7967;
-const float K_ALPHA = 28.4287;
-const float K_ALPHA_PONTO = 4.50;
-const float K[4] = {K_THETA, K_THETA_PONTO, K_ALPHA, K_ALPHA_PONTO};
-const float TS = 0.04; // segundos
+const double K_THETA = -0.0686;
+const double K_THETA_PONTO = -0.3748;
+const double K_ALPHA = 14.2718;
+const double K_ALPHA_PONTO = 2.2349;
+const double K[4] = {K_THETA, K_THETA_PONTO, K_ALPHA, K_ALPHA_PONTO};
+const double TS = 0.1; // segundos
 
 const int SETP_T = 0;
 const int SETP_TP = 0;
@@ -44,21 +44,20 @@ const int SETP_AP = 0;
 const int SETPOINT[4] = {SETP_T, SETP_TP, SETP_A, SETP_AP};
 
 //// Resolução dos encoders ////
-const float INCREMENTO_PEND = float(360)/1200;
+const double INCREMENTO_PEND = double(360)/1200;
 // TODO : Descobrir P/R
-const float INCREMENTO_MOT = 0;
+const double INCREMENTO_MOT = double(360)/315;
 
 //// Pinos ////
-const int ENC_A_PEND = 23; // 2
-const int ENC_B_PEND = 22; // 3
-// TODO : definir pinos do encoder do motor 19 e 21
-const int ENC_A_MOT = 0; // 4
-const int ENC_B_MOT = 0; // 5
+const int ENC_A_PEND = 22; // 2
+const int ENC_B_PEND = 23; // 3
+const int ENC_A_MOT = 32; // 4
+const int ENC_B_MOT = 33; // 5
 
 // TODO : definir pinos para ponte h
-const int IN_1_MOT = 0; // Sentido horário 
-const int IN_2_MOT = 0; // Sentido anti-horário 
-const int PWM_PONTE_H = 0; // 
+const int IN_1_MOT = 26; // Sentido horário 
+const int IN_2_MOT = 27; // Sentido anti-horário 
+const int PWM_PONTE_H = 14; // 
 
 // const int SW_PIN = 0;
 // const int BOT_EMERG_PIN = 0;
@@ -73,18 +72,18 @@ const int PWM_PONTE_H = 0; //
 // LiquidCrystal_I2C lcd(0x27, 16, 2); // TODO : Confirmar se o endereco eh 0x27. 
 
 // Leitura dos encoders //
-volatile float ang_enc_pend = 0, ang_enc_mot = 0;
+volatile double ang_enc_pend = 180, ang_enc_mot = 0;
 
 // Variáveis para amostragem //
-float theta, theta_ponto, alpha, alpha_ponto;
+double theta, theta_ponto, alpha, alpha_ponto;
 unsigned long tempo_amostra;
 
 // Variáveis para valores anteriores //
-float alpha_inicial, theta_inicial;
+double alpha_inicial, theta_inicial;
 unsigned long tempo_inicial;
 
 // Erro das variáveis de estado //
-float erro[4];
+double erro[4];
 
 // Intervalo de tempo na amostragem//
 double delta_tempo; // milissegundos
@@ -121,15 +120,15 @@ void atualiza_enc_b_pend()
 		ang_enc_pend += INCREMENTO_PEND;
 	}
 
-	// Condicionamento dos limites //
-	if(ang_enc_pend < -179.9)
-    {
-        ang_enc_pend += 360;
-    }
-    else if(ang_enc_pend > 180)
-    {
-        ang_enc_pend -= 360;
-    }
+	// // Condicionamento dos limites //
+	// if(ang_enc_pend < -179.9)
+    // {
+    //     ang_enc_pend += 360;
+    // }
+    // else if(ang_enc_pend > 180)
+    // {
+    //     ang_enc_pend -= 360;
+    // }
 }
 
 /**
@@ -150,14 +149,14 @@ void atualiza_enc_b_mot()
 	}
 
 	// Condicionamento dos limites //
-	if(ang_enc_mot < -179.9)
-    {
-        ang_enc_mot += 360;
-    }
-    else if(ang_enc_mot > 180)
-    {
-        ang_enc_mot -= 360;
-    }
+	// if(ang_enc_mot < -179.9)
+    // {
+    //     ang_enc_mot += 360;
+    // }
+    // else if(ang_enc_mot > 180)
+    // {
+    //     ang_enc_mot -= 360;
+    // }
 }
 
 /**
@@ -178,14 +177,14 @@ void atualiza_enc_a_pend()
 	}
 
 	// Condicionamento dos limites //
-	if(ang_enc_pend < -179.9)
-    {
-        ang_enc_pend += 360;
-    }
-    else if(ang_enc_pend > 180)
-    {
-        ang_enc_pend -= 360;
-    }
+	// if(ang_enc_pend < -179.9)
+    // {
+    //     ang_enc_pend += 360;
+    // }
+    // else if(ang_enc_pend > 180)
+    // {
+    //     ang_enc_pend -= 360;
+    // }
 }
 
 /**
@@ -206,20 +205,40 @@ void atualiza_enc_a_mot()
 	}
 
 	// Condicionamento dos limites //
-	if(ang_enc_mot < -179.9)
+	// if(ang_enc_mot < -179.9)
+    // {
+    //     ang_enc_mot += 360;
+    // }
+    // else if(ang_enc_mot > 180)
+    // {
+    //     ang_enc_mot -= 360;
+    // }
+}
+
+double condicionamento_angulo(double angulo)
+{
+	// teste, ver se funcionou.
+	if(fabs(angulo) > 360)
+	{
+		angulo = angulo % 360;
+	}
+
+	if(angulo < -179.9)
     {
-        ang_enc_mot += 360;
+        angulo += 360;
     }
-    else if(ang_enc_mot > 180)
+    else if(angulo > 180)
     {
-        ang_enc_mot -= 360;
+        angulo -= 360;
     }
+
+	return angulo;
 }
 
 /**
  * @brief Retorna os valores amostrados lidos.
  */
-void monitoramento_valores()
+void monitoramento_valores(double pwm)
 {
 	Serial.print("Tempo: ");
 	Serial.print(delta_tempo);
@@ -231,17 +250,27 @@ void monitoramento_valores()
 	Serial.print(theta);
   	Serial.print("° | ");
 	Serial.print(alpha_ponto);
-	Serial.println("°/s");
+	Serial.print("°/s | ");
+	Serial.print(pwm);
+	Serial.println(" V");
 }
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
+void teste_motor()
+{
+	analogWrite(PWM_PONTE_H, 10);
+	digitalWrite(IN_1_MOT, HIGH);
+	digitalWrite(IN_2_MOT, LOW);
+}
+
 /**
  * @brief Envio o sinal pwm e indica o sentido de rotação do motor.
  * 
- * @param sinal_de_controle double Sinal de tensão referente à saída do controlador.
+ * @param sinal_de_controle double Sinal de tensão referente à saída do controlador. 
+ * @return double pwm e sinal (sentido de rotacao).
  */
-void movimenta_motor(double sinal_de_controle)
+double movimenta_motor(double sinal_de_controle)
 {
 	// Saturação //
 	if(sinal_de_controle > 12)
@@ -263,23 +292,25 @@ void movimenta_motor(double sinal_de_controle)
 	{
 		digitalWrite(IN_1_MOT, HIGH);
   		digitalWrite(IN_2_MOT, LOW);
+		return pwm;
 	}
 	else if(sinal_de_controle < 0) // Anti-horário
 	{
 		digitalWrite(IN_1_MOT, LOW);
   		digitalWrite(IN_2_MOT, HIGH);
+		return -pwm;
 	}
 }
 
 /**
  * @brief Retorna a derivada (temporal) de uma dada variável.
  * 
- * @param valor_prev float Valor prévio da variável.
- * @param valor_atual float Valor atual da variável.
+ * @param valor_prev double Valor prévio da variável.
+ * @param valor_atual double Valor atual da variável.
  * @param deltaT double Intervalo de tempo entre as medições de valor_prev e valor_atual.
  * @return double
  */
-double calcula_derivada(float valor_prev, float valor_atual, double deltaT)
+double calcula_derivada(double valor_prev, double valor_atual, double deltaT)
 {
 	// NOTE : função para facilitar a implementação do filtro
 	return (valor_atual - valor_prev)/deltaT;
@@ -288,19 +319,16 @@ double calcula_derivada(float valor_prev, float valor_atual, double deltaT)
 /**
  * @brief Calcula o sinal de controle para o acionamento do motor.
  * 
- * @param erro float[4] Erro entre medição das variáveis de estado e o setpoint.
+ * @param erro double[4] Erro entre medição das variáveis de estado e o setpoint.
  * @return double 
  */
-double sinal_de_controle(float erro[4])
+double sinal_de_controle(double erro[4])
 {
-	// Conversão para radianos
-	double graus_p_rad = PI/double(180);
-
 	// Calculo do sinal de controle u
-	double u = (K[0] * erro[0] * graus_p_rad + 
-				K[1] * erro[1] * graus_p_rad +
-				K[2] * erro[2] * graus_p_rad + 
-				K[3] * erro[3] * graus_p_rad );
+	double u = (K[0] * erro[0] + 
+				K[1] * erro[1] +
+				K[2] * erro[2] + 
+				K[3] * erro[3]);
 
 	return u;
 }
@@ -349,8 +377,8 @@ void setup()
 	// Inicialização de variáveis //
 	digitalWrite(IN_1_MOT, LOW); 
 	digitalWrite(IN_2_MOT, LOW);
-	ang_enc_pend = 0;
-	ang_enc_mot = 0;
+	alpha_inicial = ang_enc_pend;
+	theta_inicial = ang_enc_mot;
 	tempo_inicial = millis();
 }
 
@@ -362,34 +390,41 @@ void setup()
 void loop()
 {
 	// Amostragem das leituras
-	delay(TS*1000);
 	tempo_amostra = millis();
 	delta_tempo = (tempo_amostra - tempo_inicial)/double(1000); // s
 
-	alpha = ang_enc_pend; // °
-	theta = ang_enc_mot; // °
+	if(delta_tempo >= TS)
+	{
+		alpha = ang_enc_pend; // °
+		theta = ang_enc_mot; // °
 
-	// Calcula derivadas
-	alpha_ponto = calcula_derivada(alpha_inicial, alpha, delta_tempo); // °/s
-	theta_ponto = calcula_derivada(theta_inicial, theta, delta_tempo); // °/s
+		// Calcula derivadas
+		alpha_ponto = calcula_derivada(alpha_inicial, alpha, delta_tempo); // °/s
+		theta_ponto = calcula_derivada(theta_inicial, theta, delta_tempo); // °/s
+		alpha_inicial = alpha;
+		theta_inicial = theta;
+		alpha = condicionamento_angulo(alpha);
+		theta = condicionamento_angulo(theta);
 
-	// Calcula o erro
-	erro[0] = SETPOINT[0] - theta;
-	erro[1] = SETPOINT[1] - theta_ponto;
-	erro[2] = SETPOINT[2] - alpha;
-	erro[3] = SETPOINT[3] - alpha_ponto;
+		// Calcula o erro
+		double graus_p_rad = PI/double(180);
+		erro[0] = SETPOINT[0] - (theta * graus_p_rad);
+		erro[1] = SETPOINT[1] - (theta_ponto * graus_p_rad);
+		erro[2] = SETPOINT[2] - (alpha * graus_p_rad);
+		erro[3] = SETPOINT[3] - (alpha_ponto * graus_p_rad);
 
-	// Calcula sinal de controle
-	double u = sinal_de_controle(erro); // V
+		// Calcula sinal de controle
+		double u = sinal_de_controle(erro); // V
 
-	// Aciona motor
-	movimenta_motor(u);
+		// Aciona motor
+		double pwm = movimenta_motor(u);
 
-	// Monitoramento dos valores amostrados
-	monitoramento_valores();
+		// teste_motor();
 
-	// Atualização dos valores préviso
-	tempo_inicial = tempo_amostra;
-	alpha_inicial = alpha;
-	theta_inicial = theta;
+		// Monitoramento dos valores amostrados
+		monitoramento_valores(u);
+
+		// Atualização dos valores préviso
+		tempo_inicial = tempo_amostra;
+	}
 }
