@@ -119,16 +119,6 @@ void atualiza_enc_b_pend()
 	{
 		ang_enc_pend += INCREMENTO_PEND;
 	}
-
-	// // Condicionamento dos limites //
-	// if(ang_enc_pend < -179.9)
-    // {
-    //     ang_enc_pend += 360;
-    // }
-    // else if(ang_enc_pend > 180)
-    // {
-    //     ang_enc_pend -= 360;
-    // }
 }
 
 /**
@@ -147,16 +137,6 @@ void atualiza_enc_b_mot()
 	{
 		ang_enc_mot += INCREMENTO_MOT;
 	}
-
-	// Condicionamento dos limites //
-	// if(ang_enc_mot < -179.9)
-    // {
-    //     ang_enc_mot += 360;
-    // }
-    // else if(ang_enc_mot > 180)
-    // {
-    //     ang_enc_mot -= 360;
-    // }
 }
 
 /**
@@ -175,16 +155,6 @@ void atualiza_enc_a_pend()
 	{
 		ang_enc_pend -= INCREMENTO_PEND;
 	}
-
-	// Condicionamento dos limites //
-	// if(ang_enc_pend < -179.9)
-    // {
-    //     ang_enc_pend += 360;
-    // }
-    // else if(ang_enc_pend > 180)
-    // {
-    //     ang_enc_pend -= 360;
-    // }
 }
 
 /**
@@ -203,25 +173,15 @@ void atualiza_enc_a_mot()
 	{
 		ang_enc_mot -= INCREMENTO_MOT;
 	}
-
-	// Condicionamento dos limites //
-	// if(ang_enc_mot < -179.9)
-    // {
-    //     ang_enc_mot += 360;
-    // }
-    // else if(ang_enc_mot > 180)
-    // {
-    //     ang_enc_mot -= 360;
-    // }
 }
 
 double condicionamento_angulo(double angulo)
 {
-	// teste, ver se funcionou.
-	if(fabs(angulo) > 360)
-	{
-		angulo = angulo % 360;
-	}
+	// FIXME: testar outra abordagem
+	// if(fabs(angulo) > 360)
+	// {
+	// 	angulo = angulo % 360;
+	// }
 
 	if(angulo < -179.9)
     {
@@ -361,6 +321,7 @@ void setup()
 
 	pinMode(IN_1_MOT, OUTPUT);
 	pinMode(IN_2_MOT, OUTPUT);
+	pinMode(PWM_PONTE_H, OUTPUT);
 
 	// pinMode(SW_PIN, INPUT);
 	// pinMode(BOT_EMERG_PIN, INPUT_PULLUP);
@@ -375,6 +336,7 @@ void setup()
 	// lcd.clear();
 
 	// Inicialização de variáveis //
+	analogWrite(PWM_PONTE_H, 0);
 	digitalWrite(IN_1_MOT, LOW); 
 	digitalWrite(IN_2_MOT, LOW);
 	alpha_inicial = ang_enc_pend;
