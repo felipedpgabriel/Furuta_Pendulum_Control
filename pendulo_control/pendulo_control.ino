@@ -55,9 +55,9 @@ const int ENC_A_MOT = 32; // 4
 const int ENC_B_MOT = 33; // 5
 
 // TODO : definir pinos para ponte h
-const int IN_1_MOT = 26; // Sentido horário 
-const int IN_2_MOT = 27; // Sentido anti-horário 
-const int PWM_PONTE_H = 14; // 
+const int IN_1_MOT = 19; // Sentido horário 
+const int IN_2_MOT = 21; // Sentido anti-horário 
+// const int PWM_PONTE_H = 14; // 
 
 // const int SW_PIN = 0;
 // const int BOT_EMERG_PIN = 0;
@@ -72,7 +72,7 @@ const int PWM_PONTE_H = 14; //
 // LiquidCrystal_I2C lcd(0x27, 16, 2); // TODO : Confirmar se o endereco eh 0x27. 
 
 // Leitura dos encoders //
-volatile double ang_enc_pend = 180, ang_enc_mot = 0;
+volatile double ang_enc_pend = 0, ang_enc_mot = 0;
 
 // Variáveis para amostragem //
 double theta, theta_ponto, alpha, alpha_ponto;
@@ -217,12 +217,12 @@ void monitoramento_valores(double pwm)
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
-void teste_motor()
-{
-	analogWrite(PWM_PONTE_H, 10);
-	digitalWrite(IN_1_MOT, HIGH);
-	digitalWrite(IN_2_MOT, LOW);
-}
+// void teste_motor()
+// {
+// 	analogWrite(PWM_PONTE_H, 10);
+// 	digitalWrite(IN_1_MOT, HIGH);
+// 	digitalWrite(IN_2_MOT, LOW);
+// }
 
 /**
  * @brief Envio o sinal pwm e indica o sentido de rotação do motor.
@@ -245,19 +245,19 @@ double movimenta_motor(double sinal_de_controle)
 
 	// Definição do sinal PWM //
 	double pwm = map(fabs(sinal_de_controle), 0, 12, 0, 255);
-	analogWrite(PWM_PONTE_H, pwm);
+	// analogWrite(PWM_PONTE_H, pwm);
 
 	// Definição do sentido de rotação//
 	if(sinal_de_controle > 0) // Horário
 	{
-		digitalWrite(IN_1_MOT, HIGH);
-  		digitalWrite(IN_2_MOT, LOW);
+		analogWrite(IN_1_MOT, pwm);
+  		analogWrite(IN_2_MOT, LOW);
 		return pwm;
 	}
 	else if(sinal_de_controle < 0) // Anti-horário
 	{
-		digitalWrite(IN_1_MOT, LOW);
-  		digitalWrite(IN_2_MOT, HIGH);
+		analogWrite(IN_1_MOT, LOW);
+  		analogWrite(IN_2_MOT, pwm);
 		return -pwm;
 	}
 }
@@ -321,7 +321,7 @@ void setup()
 
 	pinMode(IN_1_MOT, OUTPUT);
 	pinMode(IN_2_MOT, OUTPUT);
-	pinMode(PWM_PONTE_H, OUTPUT);
+	// pinMode(PWM_PONTE_H, OUTPUT);
 
 	// pinMode(SW_PIN, INPUT);
 	// pinMode(BOT_EMERG_PIN, INPUT_PULLUP);
@@ -336,7 +336,7 @@ void setup()
 	// lcd.clear();
 
 	// Inicialização de variáveis //
-	analogWrite(PWM_PONTE_H, 0);
+	// analogWrite(PWM_PONTE_H, 0);
 	digitalWrite(IN_1_MOT, LOW); 
 	digitalWrite(IN_2_MOT, LOW);
 	alpha_inicial = ang_enc_pend;
