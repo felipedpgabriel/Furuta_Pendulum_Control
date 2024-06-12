@@ -88,6 +88,10 @@ double erro[4];
 // Intervalo de tempo na amostragem//
 double delta_tempo; // milissegundos
 
+// Variáveis para o filtro de média móvel //
+const int Qtd_Amostras = 10;
+double alpha_filtrado, theta_filtrado;
+
 //////////////////////////////////////// FUNCOES AUXILIARES ////////////////////////////////////////
 
 /**
@@ -195,6 +199,27 @@ double condicionamento_angulo(double angulo)
 	return angulo;
 }
 
+double filtroMediaMovel(double ang_filtro) {
+    static int Leituras_anteriores[Qtd_Amostras];
+    static int Posicao = 0;
+    static long Soma = 0;
+    static float Media = 0;
+    static bool zera_vetor = 1;
+
+    if (zera_vetor) {
+        for (int i = 0; i < Qtd_Amostras; i++) {
+            Leituras_anteriores[i] = 0;
+        }
+        zera_vetor = 0;
+    } 
+    Soma = ang_filtro - Leituras_anteriores[Posicao % Qtd_Amostras] + Soma;
+    Leituras_anteriores[Posicao % Qtd_Amostras] = ang_filtro;
+    Media = (float)Soma / (float)(Qtd_Amostras);
+    Posicao = (Posicao + 1) % Qtd_Amostras;
+    return ((double)Media);
+}
+
+
 /**
  * @brief Retorna os valores amostrados lidos.
  */
@@ -213,7 +238,13 @@ void monitoramento_valores(double pwm)
 	Serial.print("°/s | ");
 	Serial.print(pwm);
 	Serial.println(" V");
+	Serial.print("Alpha Filtrado: ");
+	Serial.println('alpha_filtrado');
+	Serial.print("Theta Filtrado: ");
+	Serial.println('theta_filtrado');
 }
+
+
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
@@ -359,6 +390,8 @@ void loop()
 	{
 		alpha = ang_enc_pend; // °
 		theta = ang_enc_mot; // °
+		alpha_filtrado = filtroMediaMovel(alpha);
+		theta_filtrado = filtroMediaMovel(theta);
 
 		// Calcula derivadas
 		alpha_ponto = calcula_derivada(alpha_inicial, alpha, delta_tempo); // °/s
@@ -390,3 +423,5 @@ void loop()
 		tempo_inicial = tempo_amostra;
 	}
 }
+
+
