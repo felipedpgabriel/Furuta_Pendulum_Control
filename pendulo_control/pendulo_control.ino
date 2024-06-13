@@ -199,7 +199,7 @@ double condicionamento_angulo(double angulo)
 	return angulo;
 }
 
-double filtroMediaMovel(double ang_filtro) {
+double filtroMediaMovel(double ang_filtro, bool atualiza_saida) {
     static int Leituras_anteriores[Qtd_Amostras];
     static int Posicao = 0;
     static long Soma = 0;
@@ -212,11 +212,15 @@ double filtroMediaMovel(double ang_filtro) {
         }
         zera_vetor = 0;
     } 
-    Soma = ang_filtro - Leituras_anteriores[Posicao % Qtd_Amostras] + Soma;
-    Leituras_anteriores[Posicao % Qtd_Amostras] = ang_filtro;
-    Media = (float)Soma / (float)(Qtd_Amostras);
-    Posicao = (Posicao + 1) % Qtd_Amostras;
-    return ((double)Media);
+    if(atualiza_saida == 0) return((double)Media);
+  
+  else{ 
+  Soma = ang_filtro - Leituras_anteriores[Posicao%Qtd_Amostras] + Soma;
+  Leituras_anteriores[Posicao%Qtd_Amostras] = ang_filtro;
+  Media = (float)Soma/(float)(Qtd_Amostras);
+  Posicao = (Posicao+1)%Qtd_Amostras;
+  return((double)Media);
+  }
 }
 
 
@@ -385,13 +389,15 @@ void loop()
 	// Amostragem das leituras
 	tempo_amostra = millis();
 	delta_tempo = (tempo_amostra - tempo_inicial)/double(1000); // s
+	alpha_filtrado = filtroMediaMovel(ang_enc_pend, 1);
+	theta_filtrado = filtroMediaMovel(ang_enc_mot, 1);
 
 	if(delta_tempo >= TS)
 	{
 		alpha = ang_enc_pend; // °
 		theta = ang_enc_mot; // °
-		alpha_filtrado = filtroMediaMovel(alpha);
-		theta_filtrado = filtroMediaMovel(theta);
+		alpha_filtrado = filtroMediaMovel(alpha, 1);
+		theta_filtrado = filtroMediaMovel(theta, 1);
 
 		// Calcula derivadas
 		alpha_ponto = calcula_derivada(alpha_inicial, alpha, delta_tempo); // °/s
