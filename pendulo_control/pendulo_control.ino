@@ -200,10 +200,10 @@ double condicionamento_angulo(double angulo)
 }
 
 double filtroMediaMovel(double ang_filtro, bool atualiza_saida) {
-    static int Leituras_anteriores[Qtd_Amostras];
+    static double Leituras_anteriores[Qtd_Amostras];
     static int Posicao = 0;
     static long Soma = 0;
-    static float Media = 0;
+    static double Media = 0;
     static bool zera_vetor = 1;
 
     if (zera_vetor) {
@@ -389,8 +389,8 @@ void loop()
 	// Amostragem das leituras
 	tempo_amostra = millis();
 	delta_tempo = (tempo_amostra - tempo_inicial)/double(1000); // s
-	alpha_filtrado = filtroMediaMovel(ang_enc_pend, 1);
-	theta_filtrado = filtroMediaMovel(ang_enc_mot, 1);
+	alpha_filtrado = filtroMediaMovel(ang_enc_pend, 0);
+	theta_filtrado = filtroMediaMovel(ang_enc_mot, 0);
 
 	if(delta_tempo >= TS)
 	{
