@@ -30,17 +30,18 @@
 //////////////////////////////////////////// CONSTANTES ////////////////////////////////////////////
 
 //// Constantes do controlador ////
-const double K_THETA = -0.0686;
-const double K_THETA_PONTO = -0.3748;
-const double K_ALPHA = 14.2718;
-const double K_ALPHA_PONTO = 2.2349;
+const double K_THETA = -0.1000;
+const double K_THETA_PONTO = -0.3182;
+const double K_ALPHA = 152.5469 * 0.75; // 152.5469
+const double K_ALPHA_PONTO = 10.9051 * 0.75; // 10.9051
 const double K[4] = {K_THETA, K_THETA_PONTO, K_ALPHA, K_ALPHA_PONTO};
-const double TS = 0.1; // segundos
+const double TS = 0.03; // segundos
 
-const int SETP_T = 0;
-const int SETP_TP = 0;
-const int SETP_A = 0;
-const int SETP_AP = 0;
+double SETP_T = 0;
+double SETP_TP = 0;
+double SETP_A = 0;
+double SETP_AP = 0;
+
 const int SETPOINT[4] = {SETP_T, SETP_TP, SETP_A, SETP_AP};
 
 //// Resolução dos encoders ////
@@ -55,9 +56,9 @@ const int ENC_A_MOT = 32; // 4
 const int ENC_B_MOT = 33; // 5
 
 // TODO : definir pinos para ponte h
-const int IN_1_MOT = 19; // Sentido horário 
-const int IN_2_MOT = 21; // Sentido anti-horário 
-// const int PWM_PONTE_H = 14; // 
+const int IN_1_MOT = 21; // Sentido horário 
+const int IN_2_MOT = 19; // Sentido anti-horário 
+const int PWM_PONTE_H = 14; // não é pino
 
 // const int SW_PIN = 0;
 // const int BOT_EMERG_PIN = 0;
@@ -119,6 +120,16 @@ void atualiza_enc_b_pend()
 	{
 		ang_enc_pend += INCREMENTO_PEND;
 	}
+
+	// // Condicionamento dos limites //
+	// if(ang_enc_pend < -179.9)
+    // {
+    //     ang_enc_pend += 360;
+    // }
+    // else if(ang_enc_pend > 180)
+    // {
+    //     ang_enc_pend -= 360;
+    // }
 }
 
 /**
@@ -137,6 +148,16 @@ void atualiza_enc_b_mot()
 	{
 		ang_enc_mot += INCREMENTO_MOT;
 	}
+
+	// Condicionamento dos limites //
+	// if(ang_enc_mot < -179.9)
+    // {
+    //     ang_enc_mot += 360;
+    // }
+    // else if(ang_enc_mot > 180)
+    // {
+    //     ang_enc_mot -= 360;
+    // }
 }
 
 /**
@@ -155,6 +176,16 @@ void atualiza_enc_a_pend()
 	{
 		ang_enc_pend -= INCREMENTO_PEND;
 	}
+
+	// Condicionamento dos limites //
+	// if(ang_enc_pend < -179.9)
+    // {
+    //     ang_enc_pend += 360;
+    // }
+    // else if(ang_enc_pend > 180)
+    // {
+    //     ang_enc_pend -= 360;
+    // }
 }
 
 /**
@@ -173,15 +204,25 @@ void atualiza_enc_a_mot()
 	{
 		ang_enc_mot -= INCREMENTO_MOT;
 	}
+
+	// Condicionamento dos limites //
+	// if(ang_enc_mot < -179.9)
+    // {
+    //     ang_enc_mot += 360;
+    // }
+    // else if(ang_enc_mot > 180)
+    // {
+    //     ang_enc_mot -= 360;
+    // }
 }
 
 double condicionamento_angulo(double angulo)
 {
-	// FIXME: testar outra abordagem
-	// if(fabs(angulo) > 360)
-	// {
-	// 	angulo = angulo % 360;
-	// }
+	// teste, ver se funcionou.
+	if(fabs(angulo) > 360)
+	{
+		angulo = angulo / 360;
+	}
 
 	if(angulo < -179.9)
     {
@@ -200,29 +241,40 @@ double condicionamento_angulo(double angulo)
  */
 void monitoramento_valores(double pwm)
 {
-	Serial.print("Tempo: ");
+	//Serial.print("Tempo: ");
 	Serial.print(delta_tempo);
-	Serial.print("s || Alpha: "); //U+03B1
+  Serial.print(",");
+	//Serial.print("s || Alpha: "); //U+03B1
 	Serial.print(alpha);
-  	Serial.print("° | ");
+  Serial.print(",");
+  	//Serial.print("° | ");
 	Serial.print(alpha_ponto);
-	Serial.print("°/s || Theta: "); //U+03B8
+  Serial.print(",");
+	//Serial.print("°/s || Theta: "); //U+03B8
 	Serial.print(theta);
-  	Serial.print("° | ");
-	Serial.print(alpha_ponto);
-	Serial.print("°/s | ");
-	Serial.print(pwm);
-	Serial.println(" V");
+  Serial.print(",");
+  //Serial.print("° | ");
+	Serial.println(theta_ponto);
+//   Serial.println(",");
+	//Serial.print("°/s | ");
+	//Serial.print(pwm);
+	//Serial.println(" V");
 }
 
 //////////////////////////////////////// FUNCOES DE PROCESSO ///////////////////////////////////////
 
-// void teste_motor()
-// {
-// 	analogWrite(PWM_PONTE_H, 10);
-// 	digitalWrite(IN_1_MOT, HIGH);
-// 	digitalWrite(IN_2_MOT, LOW);
-// }
+void teste_motor()
+{
+  
+  double PWM = map(fabs(6), 0, 12, 0, 255);
+	//analogWrite(PWM_PONTE_H, 10);
+	analogWrite(IN_1_MOT, PWM);
+	analogWrite(IN_2_MOT, LOW);
+  //delay(2000);
+ 	/*analogWrite(IN_1_MOT, LOW);
+	analogWrite(IN_2_MOT, LOW);
+  delay(500);*/
+}
 
 /**
  * @brief Envio o sinal pwm e indica o sentido de rotação do motor.
@@ -244,20 +296,20 @@ double movimenta_motor(double sinal_de_controle)
 	}
 
 	// Definição do sinal PWM //
-	double pwm = map(fabs(sinal_de_controle), 0, 12, 0, 255);
+	double pwm = map(fabs(sinal_de_controle), 0, 12, 0, 170);
 	// analogWrite(PWM_PONTE_H, pwm);
 
 	// Definição do sentido de rotação//
 	if(sinal_de_controle > 0) // Horário
 	{
-		analogWrite(IN_1_MOT, pwm);
+		  analogWrite(IN_1_MOT, pwm);
   		analogWrite(IN_2_MOT, LOW);
 		return pwm;
 	}
 	else if(sinal_de_controle < 0) // Anti-horário
 	{
-		analogWrite(IN_1_MOT, LOW);
-  		analogWrite(IN_2_MOT, pwm);
+		  analogWrite(IN_1_MOT, LOW);
+		  analogWrite(IN_2_MOT, pwm);
 		return -pwm;
 	}
 }
@@ -306,6 +358,8 @@ double sinal_de_controle(double erro[4])
 */
 void setup()
 {
+
+  
 	Serial.begin(9600); // Inicialização do monitor serial para debug
 
 	// Definição dos pinos //
@@ -321,7 +375,6 @@ void setup()
 
 	pinMode(IN_1_MOT, OUTPUT);
 	pinMode(IN_2_MOT, OUTPUT);
-	// pinMode(PWM_PONTE_H, OUTPUT);
 
 	// pinMode(SW_PIN, INPUT);
 	// pinMode(BOT_EMERG_PIN, INPUT_PULLUP);
@@ -336,9 +389,8 @@ void setup()
 	// lcd.clear();
 
 	// Inicialização de variáveis //
-	// analogWrite(PWM_PONTE_H, 0);
-	digitalWrite(IN_1_MOT, LOW); 
-	digitalWrite(IN_2_MOT, LOW);
+	analogWrite(IN_1_MOT, LOW); 
+	analogWrite(IN_2_MOT, LOW);
 	alpha_inicial = ang_enc_pend;
 	theta_inicial = ang_enc_mot;
 	tempo_inicial = millis();
@@ -350,7 +402,18 @@ void setup()
  * @brief Definição do processo.
  */
 void loop()
-{
+{ 
+//   if(SETP_A<30.0 || SETP_A>-30.0){
+//   SETP_A=alpha;}
+//   if(SETP_AP<10.0 || SETP_A>-10.0){
+//   SETP_AP=alpha_ponto;}
+//   if(SETP_T<10.0 || SETP_T>-10.0){
+//   SETP_T=theta;}
+  
+//   if(SETP_TP<10.0 || SETP_A>-10.0){
+//   SETP_TP=theta_ponto;
+// }
+
 	// Amostragem das leituras
 	tempo_amostra = millis();
 	delta_tempo = (tempo_amostra - tempo_inicial)/double(1000); // s
@@ -381,12 +444,13 @@ void loop()
 		// Aciona motor
 		double pwm = movimenta_motor(u);
 
-		// teste_motor();
+		 //teste_motor();
 
 		// Monitoramento dos valores amostrados
 		monitoramento_valores(u);
-
+    //delay(200);
 		// Atualização dos valores préviso
 		tempo_inicial = tempo_amostra;
+    //delay(200);
 	}
 }
